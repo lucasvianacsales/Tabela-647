@@ -7,7 +7,7 @@ st.title("Visualização do Dataset")
 # -----------------------------
 # CARREGAR DATASET
 # -----------------------------
-df = pd.read_csv(r"C:\Analista de Dados\case\dataset.csv")
+df = pd.read_csv("dataset.csv")
 df.columns = df.columns.str.strip()
 
 # Normaliza a coluna Mes para abreviação

@@ -5,13 +5,13 @@ import pickle
 st.title("Previsão de Custo por m²")
 
 # Carregar dataset
-df = pd.read_csv(r"C:\Analista de Dados\case\dataset.csv")
+df = pd.read_csv("dataset.csv")
 df.columns = df.columns.str.strip()
 
 # Normaliza os meses para comparar
 df["Mes_clean"] = df["Mes"].str.strip().str.capitalize()
 
-with open(r"C:\Analista de Dados\case\modelo.pkl", "rb") as f:
+with open("modelo.pkl", "rb") as f:
     modelo = pickle.load(f)
 
 col1, col2 = st.columns(2)
