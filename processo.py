@@ -24,12 +24,12 @@ print("="*60)
 if len(sys.argv) > 1:
     arquivo = sys.argv[1]
 else:
-    arquivo = r"C:\Analista de Dados\case\tabela.csv"
+    arquivo = r"C:\Users\Mônica Gabriela\Tabela-647\tabela.csv"
 
 if not os.path.exists(arquivo):
     sys.exit("ERRO: Arquivo não encontrado.")
 
-pasta_saida = r"C:\Analista de Dados\case"
+pasta_saida = r"C:\Users\Mônica Gabriela\Tabela-647"
 if not os.path.exists(pasta_saida):
     os.makedirs(pasta_saida)
 
