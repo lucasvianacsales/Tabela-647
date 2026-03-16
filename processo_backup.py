@@ -159,37 +159,19 @@ df.to_csv(dataset_saida, index=False, encoding='utf-8-sig')
 # -----------------------------
 print("Treinando modelo de Machine Learning...\n\n")
 
-# garantir que Ano seja numérico
-df["Ano"] = pd.to_numeric(df["Ano"], errors="coerce")
-
-X = df[["UF", "Padrao_Acabamento", "Mes", "Ano", "Tipo_Projeto"]]
+X = df[["UF", "Padrao_Acabamento", "Mes", "Tipo_Projeto"]]
 y = df["Valor_m2"]
 
 colunas_categoricas = ["UF", "Padrao_Acabamento", "Mes", "Tipo_Projeto"]
-colunas_numericas = ["Ano"]
 
 preprocessador = ColumnTransformer(
-    transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), colunas_categoricas),
-        ("num", "passthrough", colunas_numericas)
-    ]
+    transformers=[("cat", OneHotEncoder(handle_unknown="ignore"), colunas_categoricas)]
 )
 
-modelo = RandomForestRegressor(
-    n_estimators=50,
-    max_depth=10,
-    random_state=42
-)
+modelo = RandomForestRegressor(n_estimators=50, random_state=42)
+pipeline = Pipeline([("preprocessamento", preprocessador), ("modelo", modelo)])
 
-pipeline = Pipeline([
-    ("preprocessamento", preprocessador),
-    ("modelo", modelo)
-])
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 pipeline.fit(X_train, y_train)
 
 previsoes = pipeline.predict(X_test)
@@ -198,11 +180,9 @@ previsoes = pipeline.predict(X_test)
 # AVALIAR MODELO
 # -----------------------------
 score = r2_score(y_test, previsoes)
-print(f"Precisão do modelo (R²): {round(score, 3)}")
-
+print(f"Precisão do modelo (R²): {round(score,3)}")
 with open(modelo_saida, "wb") as f:
     pickle.dump(pipeline, f)
-
 print(f"Modelo salvo em: {modelo_saida}")
 print("="*60)
 print("PROCESSAMENTO FINALIZADO")
