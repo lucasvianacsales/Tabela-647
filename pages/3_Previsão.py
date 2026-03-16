@@ -115,37 +115,50 @@ if st.button("Calcular custo estimado"):
         minimo_historico = filtro_ref["Valor_m2"].min()
         maximo_historico = filtro_ref["Valor_m2"].max()
 
-        diferenca_percentual = ((previsao - valor_ultimo) / valor_ultimo) * 100
+        # crescimento médio anual global
+        media_por_ano = df.groupby("Ano")["Valor_m2"].mean().sort_index()
+        crescimento_medio = media_por_ano.pct_change().dropna().mean()
+
+        anos_a_frente = ano - ultimo_ano
+
+        if anos_a_frente > 0:
+            referencia_ajustada = valor_ultimo * ((1 + crescimento_medio) ** anos_a_frente)
+        else:
+            referencia_ajustada = valor_ultimo
+
+        diferenca_percentual = ((previsao - referencia_ajustada) / referencia_ajustada) * 100
 
         st.write("### Referência histórica")
         st.write(f"**Último valor observado ({ultimo_ano}):** R$ {valor_ultimo:.2f}/m²")
+        st.write(f"**Referência ajustada para {ano}:** R$ {referencia_ajustada:.2f}/m²")
+        st.write(f"**Crescimento médio anual usado:** {crescimento_medio * 100:.2f}%")
         st.write(f"**Menor valor histórico:** R$ {minimo_historico:.2f}/m²")
         st.write(f"**Maior valor histórico:** R$ {maximo_historico:.2f}/m²")
-        st.write(f"**Variação em relação ao último valor:** {diferenca_percentual:.2f}%")
+        st.write(f"**Variação em relação à referência ajustada:** {diferenca_percentual:.2f}%")
 
         if diferenca_percentual >= 8:
             st.warning(
                 f"🚨 Forte alta: o custo previsto para {ano} está {diferenca_percentual:.2f}% acima "
-                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
+                f"da referência ajustada para {uf} / {mes} / {padrao} / {tipo}."
             )
         elif diferenca_percentual >= 3:
             st.info(
                 f"📈 Leve alta: o custo previsto para {ano} está {diferenca_percentual:.2f}% acima "
-                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
+                f"da referência ajustada para {uf} / {mes} / {padrao} / {tipo}."
             )
         elif diferenca_percentual <= -8:
             st.warning(
                 f"🔻 Forte queda: o custo previsto para {ano} está {abs(diferenca_percentual):.2f}% abaixo "
-                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
+                f"da referência ajustada para {uf} / {mes} / {padrao} / {tipo}."
             )
         elif diferenca_percentual <= -3:
             st.info(
                 f"📉 Leve queda: o custo previsto para {ano} está {abs(diferenca_percentual):.2f}% abaixo "
-                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
+                f"da referência ajustada para {uf} / {mes} / {padrao} / {tipo}."
             )
         else:
             st.success(
-                f"✔️ Valor muito próximo do último observado para {uf} / {mes} / {padrao} / {tipo}."
+                f"✔️ O custo previsto para {ano} está dentro da faixa esperada para esse cenário."
             )
 
         with st.expander("Ver base histórica usada no alerta"):
