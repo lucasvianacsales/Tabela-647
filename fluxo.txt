@@ -1,0 +1,13 @@
+
+FUNCTION Cópia_de_Main GLOBAL
+    LOOP WHILE ($'''true''') = ($'''true''')
+        WAIT (File.WaitForFile.Created File: $'''C:\\Users\\Mônica Gabriela\\Tabela-647\\tabela.csv''')
+        System.RunApplication.RunApplicationAndWaitToComplete ApplicationPath: $'''C:\\Users\\Mônica Gabriela\\AppData\\Local\\Programs\\Python\\Python313\\python.exe''' CommandLineArguments: $'''\"C:\\Users\\Mônica Gabriela\\Tabela-647\\processo.py\"''' WorkingDirectory: $'''C:\\Users\\Mônica Gabriela\\Tabela-647''' WindowStyle: System.ProcessWindowStyle.Hidden Timeout: 0 ProcessId=> AppProcessId ExitCode=> AppExitCode
+        File.Move Files: $'''C:\\Users\\Mônica Gabriela\\Tabela-647\\tabela.csv''' Destination: $'''C:\\Users\\Mônica Gabriela\\Tabela-647\\processados''' IfFileExists: File.IfExists.Overwrite MovedFiles=> MovedFiles
+        DISABLE Scripting.RunDOSCommand.RunDOSCommand DOSCommandOrApplication: $'''\"C:\\Program Files\\Git\\cmd\\git.exe\" add .''' WorkingDirectory: $'''C:\\Users\\Mônica Gabriela\\Tabela-647''' StandardOutput=> CommandOutput StandardError=> CommandErrorOutput ExitCode=> CommandExitCode
+        DISABLE Scripting.RunDOSCommand.RunDOSCommand DOSCommandOrApplication: $'''\"C:\\Program Files\\Git\\cmd\\git.exe\" commit -m \"Atualização automática via PAD\"''' WorkingDirectory: $'''C:\\Users\\Mônica Gabriela\\Tabela-647''' StandardOutput=> CommandOutput2 StandardError=> CommandErrorOutput2 ExitCode=> CommandExitCode2
+        DISABLE Scripting.RunDOSCommand.RunDOSCommand DOSCommandOrApplication: $'''\"C:\\Program Files\\Git\\cmd\\git.exe\" push origin master''' WorkingDirectory: $'''C:\\Users\\Mônica Gabriela\\Tabela-647''' StandardOutput=> CommandOutput3 StandardError=> CommandErrorOutput3 ExitCode=> CommandExitCode3
+        Scripting.RunDOSCommand.RunDOSCommand DOSCommandOrApplication: $'''cd C:\\Users\\Mônica Gabriela\\Tabela-647 && \"C:\\Program Files\\Git\\cmd\\git.exe\" add . && ( \"C:\\Program Files\\Git\\cmd\\git.exe\" commit -m \"Atualização automática via PAD\" || echo Sem alterações ) && \"C:\\Program Files\\Git\\cmd\\git.exe\" push origin master''' WorkingDirectory: $'''C:\\Users\\Mônica Gabriela\\Tabela-647''' StandardOutput=> CommandOutput StandardError=> CommandErrorOutput ExitCode=> CommandExitCode
+        DISABLE System.RunApplication.RunApplication ApplicationPath: $'''C:\\Users\\Mônica Gabriela\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\streamlit.exe''' CommandLineArguments: $'''run \"C:\\Users\\Mônica Gabriela\\Tabela-647\\dashboard.py\"''' WorkingDirectory: $'''C:\\Users\\Mônica Gabriela\\Tabela-647''' WindowStyle: System.ProcessWindowStyle.Hidden ProcessId=> AppProcessId2
+    END
+END FUNCTION
