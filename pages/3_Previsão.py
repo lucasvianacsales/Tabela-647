@@ -43,9 +43,9 @@ padroes = sorted(df["Padrao_Acabamento"].dropna().unique())
 tipos = sorted(df["Tipo_Projeto"].dropna().unique())
 meses_presentes = [m for m in meses_ordem if m in df["Mes"].dropna().unique()]
 
-# anos para previsão futura
-anos_previsao = list(range(2021, 2031))
-indice_padrao_ano = anos_previsao.index(2026) if 2026 in anos_previsao else 0
+# apenas anos futuros para previsão
+anos_previsao = list(range(2026, 2031))
+indice_padrao_ano = 0
 
 # -----------------------------
 # CAMPOS DE ENTRADA
@@ -78,7 +78,6 @@ if st.button("Calcular custo estimado"):
     # -----------------------------
     # REFERÊNCIA HISTÓRICA
     # mesmo UF + Mês + Padrão + Tipo
-    # usando somente os anos históricos do dataset
     # -----------------------------
     filtro_ref = df[
         (df["UF"] == uf) &
@@ -88,35 +87,35 @@ if st.button("Calcular custo estimado"):
     ].copy()
 
     if not filtro_ref.empty:
-        media_referencia = filtro_ref["Valor_m2"].mean()
+        ultimo_ano = int(filtro_ref["Ano"].max())
+        valor_ultimo = filtro_ref.loc[filtro_ref["Ano"] == ultimo_ano, "Valor_m2"].mean()
+
         minimo_historico = filtro_ref["Valor_m2"].min()
         maximo_historico = filtro_ref["Valor_m2"].max()
-        diferenca_percentual = ((previsao - media_referencia) / media_referencia) * 100
 
-        limite_superior = media_referencia * 1.10
-        limite_inferior = media_referencia * 0.90
+        diferenca_percentual = ((previsao - valor_ultimo) / valor_ultimo) * 100
 
-        ano_min = int(filtro_ref["Ano"].min())
-        ano_max = int(filtro_ref["Ano"].max())
+        limite_superior = valor_ultimo * 1.10
+        limite_inferior = valor_ultimo * 0.90
 
         st.write("### Referência histórica")
-        st.write(f"**Média histórica ({ano_min}–{ano_max}):** R$ {media_referencia:.2f}/m²")
-        st.write(f"**Menor valor observado:** R$ {minimo_historico:.2f}/m²")
-        st.write(f"**Maior valor observado:** R$ {maximo_historico:.2f}/m²")
+        st.write(f"**Último valor observado ({ultimo_ano}):** R$ {valor_ultimo:.2f}/m²")
+        st.write(f"**Menor valor histórico:** R$ {minimo_historico:.2f}/m²")
+        st.write(f"**Maior valor histórico:** R$ {maximo_historico:.2f}/m²")
 
         if previsao > limite_superior:
             st.warning(
                 f"🚨 O custo previsto para {ano} está {abs(diferenca_percentual):.1f}% acima "
-                f"da média histórica para {uf} / {mes} / {padrao} / {tipo}."
+                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
             )
         elif previsao < limite_inferior:
             st.info(
                 f"✅ O custo previsto para {ano} está {abs(diferenca_percentual):.1f}% abaixo "
-                f"da média histórica para {uf} / {mes} / {padrao} / {tipo}."
+                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
             )
         else:
             st.success(
-                f"✔️ O custo previsto para {ano} está dentro da faixa esperada para esse cenário."
+                f"✔️ O custo previsto para {ano} está próximo do último valor observado para esse cenário."
             )
 
         with st.expander("Ver base histórica usada no alerta"):
