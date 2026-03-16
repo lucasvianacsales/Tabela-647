@@ -45,7 +45,6 @@ meses_presentes = [m for m in meses_ordem if m in df["Mes"].dropna().unique()]
 
 # apenas anos futuros para previsão
 anos_previsao = list(range(2026, 2031))
-indice_padrao_ano = 0
 
 # -----------------------------
 # CAMPOS DE ENTRADA
@@ -56,7 +55,7 @@ uf = col1.selectbox("Estado", ufs)
 padrao = col1.selectbox("Padrão de Acabamento", padroes)
 
 mes = col2.selectbox("Mês", meses_presentes)
-ano = col2.selectbox("Ano da previsão", anos_previsao, index=indice_padrao_ano)
+ano = col2.selectbox("Ano da previsão", anos_previsao)
 
 tipo = st.selectbox("Tipo de Projeto", tipos)
 
@@ -72,8 +71,29 @@ if st.button("Calcular custo estimado"):
         "Tipo_Projeto": [tipo]
     })
 
-    previsao = modelo.predict(entrada)[0]
+    # previsão base do modelo
+    previsao_base = modelo.predict(entrada)[0]
+
+    # -----------------------------
+    # AJUSTE DE TENDÊNCIA ANUAL
+    # -----------------------------
+    media_por_ano = df.groupby("Ano")["Valor_m2"].mean().sort_index()
+    crescimento_medio = media_por_ano.pct_change().dropna().mean()
+
+    ultimo_ano_historico_global = int(df["Ano"].max())
+    anos_a_frente = ano - ultimo_ano_historico_global
+
+    if anos_a_frente > 0:
+        previsao = previsao_base * ((1 + crescimento_medio) ** anos_a_frente)
+    else:
+        previsao = previsao_base
+
     st.success(f"Custo estimado: R$ {previsao:.2f} por m²")
+
+    st.caption(
+        f"Previsão base do modelo: R$ {previsao_base:.2f}/m² | "
+        f"Crescimento médio anual aplicado: {crescimento_medio * 100:.2f}%"
+    )
 
     # -----------------------------
     # REFERÊNCIA HISTÓRICA
@@ -88,34 +108,44 @@ if st.button("Calcular custo estimado"):
 
     if not filtro_ref.empty:
         ultimo_ano = int(filtro_ref["Ano"].max())
-        valor_ultimo = filtro_ref.loc[filtro_ref["Ano"] == ultimo_ano, "Valor_m2"].mean()
+        valor_ultimo = filtro_ref.loc[
+            filtro_ref["Ano"] == ultimo_ano, "Valor_m2"
+        ].mean()
 
         minimo_historico = filtro_ref["Valor_m2"].min()
         maximo_historico = filtro_ref["Valor_m2"].max()
 
         diferenca_percentual = ((previsao - valor_ultimo) / valor_ultimo) * 100
 
-        limite_superior = valor_ultimo * 1.10
-        limite_inferior = valor_ultimo * 0.90
-
         st.write("### Referência histórica")
         st.write(f"**Último valor observado ({ultimo_ano}):** R$ {valor_ultimo:.2f}/m²")
         st.write(f"**Menor valor histórico:** R$ {minimo_historico:.2f}/m²")
         st.write(f"**Maior valor histórico:** R$ {maximo_historico:.2f}/m²")
+        st.write(f"**Variação em relação ao último valor:** {diferenca_percentual:.2f}%")
 
-        if previsao > limite_superior:
+        if diferenca_percentual >= 8:
             st.warning(
-                f"🚨 O custo previsto para {ano} está {abs(diferenca_percentual):.1f}% acima "
+                f"🚨 Forte alta: o custo previsto para {ano} está {diferenca_percentual:.2f}% acima "
                 f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
             )
-        elif previsao < limite_inferior:
+        elif diferenca_percentual >= 3:
             st.info(
-                f"✅ O custo previsto para {ano} está {abs(diferenca_percentual):.1f}% abaixo "
+                f"📈 Leve alta: o custo previsto para {ano} está {diferenca_percentual:.2f}% acima "
+                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
+            )
+        elif diferenca_percentual <= -8:
+            st.warning(
+                f"🔻 Forte queda: o custo previsto para {ano} está {abs(diferenca_percentual):.2f}% abaixo "
+                f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
+            )
+        elif diferenca_percentual <= -3:
+            st.info(
+                f"📉 Leve queda: o custo previsto para {ano} está {abs(diferenca_percentual):.2f}% abaixo "
                 f"do último valor observado para {uf} / {mes} / {padrao} / {tipo}."
             )
         else:
             st.success(
-                f"✔️ O custo previsto para {ano} está próximo do último valor observado para esse cenário."
+                f"✔️ Valor muito próximo do último observado para {uf} / {mes} / {padrao} / {tipo}."
             )
 
         with st.expander("Ver base histórica usada no alerta"):
